@@ -14,7 +14,7 @@ This assignment aims to demonstrate the process of deploying a Dockerized Ruby o
 4. The web application will integrate with database and S3. So you may need to create a RDS instance (Postgres) and S3 bucket and use them as ENV variable in ECS. Required ENV names will be mentioned in Github repo’s README. Application should integrate with S3 using IAM role authentication, not AccessKey and SecretKey. Application should integrate with RDS using database credentials (Host, DB name, Username and Password).
 5. It should also contain a ReadMe file with cleardetails about how to use and create the Infrastructure with this IaC code.
 6. Prepare an architecture diagram, deployment steps, and any other relevant information in the same folder.
-7. Share a GitHub repository to Github account “Mallowdev” and send an email to HR team (hr@mallow-tech.com) about the completion along with Github repository link and branch details.
+7. Share a GitHub repository to Github account “Mallowtechdev” and send an email to HR team (hr@mallow-tech.com) about the completion along with Github repository link and branch details.
 
 
 ### Iac Structure
