@@ -1,0 +1,69 @@
+pipeline {
+    agent any
+    
+    environment {
+        AWS_ACCOUNT_ID = credentials('AWS_ACCOUNT_ID')
+        AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
+        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+        AWS_REGION = 'us-east-1'
+        ECR_REPOSITORY = 'rails-app-dev'
+        CLUSTER_NAME = 'rails-app-dev-cluster'
+        APP_SERVICE_NAME = 'rails-app-dev-app-service'
+        NGINX_SERVICE_NAME = 'rails-app-dev-nginx-service'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Build App Image') {
+            steps {
+                dir('docker/app') {
+                    script {
+                        appImage = docker.build("${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:app-${env.BUILD_NUMBER}")
+                    }
+                }
+            }
+        }
+        
+        stage('Build Nginx Image') {
+            steps {
+                dir('docker/nginx') {
+                    script {
+                        nginxImage = docker.build("${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:nginx-${env.BUILD_NUMBER}")
+                    }
+                }
+            }
+        }
+        
+        stage('Login to ECR') {
+            steps {
+                sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+            }
+        }
+        
+        stage('Push Images to ECR') {
+            steps {
+                script {
+                    appImage.push()
+                    nginxImage.push()
+                }
+            }
+        }
+        
+        stage('Update ECS Services') {
+            steps {
+                script {
+                    // Update app service
+                    sh "aws ecs update-service --cluster ${CLUSTER_NAME} --service ${APP_SERVICE_NAME} --force-new-deployment --region ${AWS_REGION}"
+                    
+                    // Update nginx service
+                    sh "aws ecs update-service --cluster ${CLUSTER_NAME} --service ${NGINX_SERVICE_NAME} --force-new-deployment --region ${AWS_REGION}"
+                }
+            }
+        }
+    }
+}
